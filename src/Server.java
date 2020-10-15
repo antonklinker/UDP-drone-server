@@ -12,6 +12,7 @@ public class Server extends Thread {
     private DatagramSocket socket;
     private boolean running;
     private byte[] buf = new byte[256];
+    String deathmessage = "death";
 
 
     public Server() throws SocketException {
@@ -29,6 +30,7 @@ public class Server extends Thread {
         running = true;
 
         while (running) {
+
             DatagramPacket packet
                     = new DatagramPacket(buf, buf.length);
             try {
@@ -42,26 +44,37 @@ public class Server extends Thread {
             packet = new DatagramPacket(buf, buf.length, address, port);
             String received
                     = new String(packet.getData(), 0, packet.getLength());
-
-            if (received.equals("end")) {
-                running = false;
-                continue;
-            }
             try {
                 received = received.trim();
                 buf = new byte[256];
                 int num = 0;
+                String contents = null;
                 try {
                     num = Integer.parseInt(received);
+                    contents = num * num + "";
                 } catch (NumberFormatException e) {
-
-                    System.out.println(e);
-                    System.out.println(received + " is a string. That's no good");
+                    if (received.equals("end")) {
+                        running = false;
+                        continue;
+                    }
+                    if (received.equals("death")) {
+                        DatagramPacket dp = new DatagramPacket(deathmessage.getBytes(), deathmessage.length(), address, port);
+                        while (running) {
+                            socket.send(dp);
+                            if (received.equals("help")) break;
+                        }
+                    }
+                    System.out.println("I would prefer an integer but you will get your string after 5 dots");
+                    for (int i=0; i<=5; i++) {
+                        sleep(1000);
+                        System.out.print(". ");
+                    }
+                    contents = received;
                 }
-                String contents = num * num + "";
                 DatagramPacket p = new DatagramPacket(contents.getBytes(), contents.length(), address, port);
                 socket.send(p);
-            } catch (IOException e) {
+                System.out.println(contents);
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
         }
